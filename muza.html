@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decentralized Vault</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        /* --- Global App Styles --- */
+        #app {
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* --- 1. NEW: Landing Page Styles --- */
+        .landing-page {
+            overflow-y: auto;
+            height: 100%;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            color: #0d6efd !important;
+        }
+        .navbar-brand .bi {
+            color: #0d6efd;
+        }
+        .hero-section {
+            padding: 6rem 0;
+            background-color: #f8f9fa;
+        }
+        .hero-section h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+        }
+        .hero-section .lead {
+            font-size: 1.25rem;
+            color: #6c757d;
+        }
+        .section-icon {
+            font-size: 3rem;
+            color: #0d6efd;
+        }
+        .feature-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 50%;
+            font-size: 2rem;
+            color: #fff;
+            background-color: #0d6efd;
+        }
+        .footer {
+            background-color: #212529;
+            color: #adb5bd;
+        }
+        .footer a {
+            color: #fff;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* --- 2. Vault App Styles (Our existing app) --- */
+        .vault-wrapper {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: #212529;
+            color: #fff;
+        }
+        .sidebar .nav-link { font-size: 1.1em; color: #adb5bd; transition: all 0.2s ease; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { color: #fff; background-color: #495057; }
+        .sidebar .nav-link .bi { margin-right: 12px; font-size: 1.2em; vertical-align: middle; }
+        .sidebar-header { font-size: 1.5rem; font-weight: 700; color: #fff; border-bottom: 1px solid #495057; }
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 40px; }
+        
+        .page-enter-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .page-enter-from { opacity: 0; transform: translateY(20px); }
+        .page-enter-to { opacity: 1; transform: translateY(0); }
+        
+        .file-card, .vc-card { display: flex; flex-direction: column; transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.05); height: 100%; }
+        .file-card:hover, .vc-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .file-card .card-body, .vc-card .card-body { flex-grow: 1; display: flex; flex-direction: column; }
+        .file-card .card-title, .vc-card .card-title { font-weight: 600; }
+        .file-card .card-icon { font-size: 3.5rem; line-height: 1; color: #0d6efd; }
+        .vc-card .card-icon { font-size: 3.5rem; line-height: 1; color: #198754; }
+        .file-card .card-tags, .vc-card .card-tags { margin-top: auto; padding-top: 1rem; }
+
+        .upload-drop-zone { border: 2px dashed #adb5bd; border-radius: .375rem; padding: 4rem; text-align: center; color: #6c757d; background-color: #f8f9fa; transition: all 0.2s ease; cursor: pointer; }
+        .upload-drop-zone.is-active { background-color: #e9ecef; border-color: #0d6efd; color: #0d6efd; }
+        .upload-drop-zone .bi { font-size: 3rem; line-height: 1; }
+        .upload-drop-zone input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+    
+        <div v-if="showLandingPage" class="landing-page">
+            
+            <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+                <div class="container">
+                    <a class="navbar-brand" href="#">
+                        <i class="bi bi-shield-lock-fill"></i>
+                        Decentralized Vault
+                    </a>
+                    <div class="ms-auto">
+                        <button class="btn btn-outline-primary me-2" @click.prevent="signIn">Sign In</button>
+                        <button class="btn btn-primary" @click.prevent="signIn">Sign Up</button>
+                    </div>
+                </div>
+            </nav>
+
+            <header class="hero-section">
+                <div class="container">
+                    <div class="row align-items-center">
+                        <div class="col-lg-6">
+                            <h1 class="display-4 fw-bold">Your Documents. Your Control.</h1>
+                            <p class="lead my-4">The future of identity is here. A secure, decentralized vault for your verifiable credentials and personal files, built on the principles of self-sovereign identity.</p>
+                            <button class="btn btn-primary btn-lg" @click.prevent="signIn">
+                                <i class="bi bi-box-arrow-in-right"></i> Access Your Vault
+                            </button>
+                            <button class="btn btn-outline-secondary btn-lg ms-2" @click.prevent="signIn">Learn More</button>
+                        </div>
+                        <div class="col-lg-6 text-center">
+                            <i class="bi bi-person-badge-fill" style="font-size: 15rem; color: #0d6efd40;"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="py-5">
+                <div class="container">
+                    <h2 class="text-center display-6 fw-bold mb-5">How It Works</h2>
+                    <div class="row g-4 text-center">
+                        <div class="col-md-4">
+                            <i class="bi bi-patch-check-fill section-icon mb-3"></i>
+                            <h4 class="fw-bold">1. Get Issued</h4>
+                            <p>Authorities (like your university or a government agency) issue Verifiable Credentials (VCs) directly to your unique Decentralized Identifier (DID).</p>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="bi bi-wallet-fill section-icon mb-3"></i>
+                            <h4 class="fw-bold">2. Store Securely</h4>
+                            <p>All your credentials and personal files are stored in your private, encrypted vault. You, and only you, hold the keys.</p>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="bi bi-send-check-fill section-icon mb-3"></i>
+                            <h4 class="fw-bold">3. Share with Consent</h4>
+                            <p>Share your credentials with employers or services. They can instantly verify them on the blockchain without needing to call the issuer.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="py-5 bg-white">
+                <div class="container">
+                    <h2 class="text-center display-6 fw-bold mb-5">Powered by Web3 Principles</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-start">
+                                <span class="feature-icon me-3"><i class="bi bi-shield-lock-fill"></i></span>
+                                <div>
+                                    <h5 class="fw-bold">Self-Sovereign</h5>
+                                    <p>You own your identity. No central authority can take it away or see your data without your permission.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-start">
+                                <span class="feature-icon me-3"><i class="bi bi-search"></i></span>
+                                <div>
+                                    <h5 class="fw-bold">Verifiable & Trustless</h5>
+                                    <p>Credentials can be verified instantly by anyone, anywhere, using cryptography, removing the need for a central middleman.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-start">
+                                <span class="feature-icon me-3"><i class="bi bi-eye-slash-fill"></i></span>
+                                <div>
+                                    <h5 class="fw-bold">Privacy by Design</h5>
+                                    <p>Use "Selective Disclosure" to share only the data you need to (e.g., "Yes, I am over 18") without revealing your full document.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <footer class="footer py-5">
+                <div class="container text-center">
+                    <p class="mb-2">&copy; 2025 Decentralized Vault. A Proof of Concept.</p>
+                    <p>This is a non-commercial project to demonstrate Decentralized Identity (DID) and Verifiable Credentials (VCs).</p>
+                </div>
+            </footer>
+            
+        </div>
+        
+        <div v-if="!showLandingPage" class="vault-wrapper">
+        
+            <div class="sidebar d-flex flex-column p-3">
+                <div class="sidebar-header pb-3 mb-3">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>DID-Vault</span>
+                </div>
+
+                <span class="nav-link text-muted" style="font-size: 0.9em; margin-top: 1rem;"><i class="bi bi-person-fill"></i> Your Wallet</span>
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" :class="{ active: activePage === 'dashboard' }" @click.prevent="activePage = 'dashboard'">
+                           <i class="bi bi-grid-fill"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" :class="{ active: activePage === 'issued' }" @click.prevent="activePage = 'issued'">
+                           <i class="bi bi-patch-check-fill"></i> Issued Documents
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" :class="{ active: activePage === 'uploaded' }" @click.prevent="activePage = 'uploaded'">
+                           <i class="bi bi-cloud-upload-fill"></i> My Uploaded Files
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" :class="{ active: activePage === 'upload_new' }" @click.prevent="activePage = 'upload_new'">
+                           <i class="bi bi-plus-circle-fill"></i> Upload New File
+                        </a>
+                    </li>
+                </ul>
+
+                <span class="nav-link text-muted" style="font-size: 0.9em; margin-top: 1rem;"><i class="bi bi-diagram-3-fill"></i> System Actions</span>
+                <ul class="nav nav-pills flex-column">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" :class="{ active: activePage === 'issuer_portal' }" @click.prevent="activePage = 'issuer_portal'">
+                           <i class="bi bi-pen-fill"></i> Issuer Portal
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" :class="{ active: activePage === 'verifier_portal' }" @click.prevent="activePage = 'verifier_portal'">
+                           <i class="bi bi-search"></i> Verifier Portal
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="nav nav-pills flex-column mt-auto">
+                    <hr class="text-secondary">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" @click.prevent="signOut">
+                           <i class="bi bi-box-arrow-left"></i> Sign Out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <main class="main-content">
+                <transition name="page" mode="out-in">
+                    <div :key="activePage">
+                    
+                        <div v-if="activePage === 'dashboard'">
+                            <h1 class="display-5 mb-4">Dashboard</h1>
+                            <p class="lead">Welcome to your secure Decentralized Vault, <strong>{{ user.name }}</strong>.</p>
+                            <p class="text-muted">Your Decentralized Identifier (DID): <strong>{{ user.did }}</strong></p>
+                            <hr>
+                            <div class="row g-4">
+                                <div class="col-lg-4">
+                                    <div class="card text-center h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Issued Credentials</h5>
+                                            <h1 class="display-4 fw-bold">{{ issuedDocs.length }}</h1>
+                                            <p class="card-text">Official documents issued to your DID.</p>
+                                            <button class="btn btn-success" @click="activePage = 'issued'">
+                                                <i class="bi bi-patch-check-fill"></i> View Issued Docs
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="card text-center h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Uploaded Files</h5>
+                                            <h1 class="display-4 fw-bold">{{ uploadedDocs.length }}</h1>
+                                            <p class="card-text">Personal files in your secure vault.</p>
+                                            <button class="btn btn-primary" @click="activePage = 'uploaded'">
+                                                <i class="bi bi-cloud-upload-fill"></i> View My Files
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4">
+                                    <div class="card text-center h-100">
+                                        <div class="card-body">
+                                            <h5 class="card-title">System Portals</h5>
+                                            <p class="card-text">Simulate issuing or verifying credentials.</p>
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-outline-dark" @click="activePage = 'issuer_portal'">
+                                                    <i class="bi bi-pen-fill"></i> Go to Issuer Portal
+                                                </button>
+                                                <button class="btn btn-outline-dark" @click="activePage = 'verifier_portal'">
+                                                    <i class="bi bi-search"></i> Go to Verifier Portal
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="activePage === 'issued'">
+                            <h1 class="display-5 mb-4">Issued Documents</h1>
+                            <p class="lead mb-4">These are official documents issued to your DID by authorities (e.g., University, Govt).</p>
+                            <div v-if="issuedDocs.length === 0" class="alert alert-info">
+                                You have no issued documents. Go to the "Issuer Portal" to simulate issuing one.
+                            </div>
+                            <div v-else class="row g-4">
+                                <div v-for="vc in issuedDocs" :key="vc.id" class="col-lg-4 col-md-6">
+                                    <div class="card vc-card h-100">
+                                        <div class="card-header fw-bold text-success-emphasis bg-success-subtle"><i class="bi bi-patch-check-fill"></i> Verifiable Credential</div>
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="bi bi-award-fill card-icon me-3"></i>
+                                                <div>
+                                                    <h5 class="card-title mb-0">{{ vc.type[1] }}</h5>
+                                                    <small class="text-muted">Issued by: {{ vc.issuer.name }}</small>
+                                                </div>
+                                            </div>
+                                            <p class="card-text">
+                                                <strong>Holder:</strong> {{ vc.credentialSubject.data.name }} <br>
+                                                <strong v-if="vc.credentialSubject.data.grade">Grade:</strong> {{ vc.credentialSubject.data.grade }}
+                                            </p>
+                                            <div class="card-tags">
+                                                <span class="badge bg-success">Verified</span>
+                                                <span class="badge bg-secondary me-1">Academic</span>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer d-flex justify-content-between">
+                                            <button class="btn btn-sm btn-outline-primary" @click="shareForVerification(vc)"><i class="bi bi-send-fill"></i> Share to Verifier</button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteVC(vc.id)"><i class="bi bi-trash-fill"></i> Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="activePage === 'uploaded'">
+                            <h1 class="display-5 mb-4">My Uploaded Files</h1>
+                            <p class="lead mb-4">These are your personal files, encrypted and stored in your vault.</p>
+                            <div v-if="uploadedDocs.length === 0" class="alert alert-info">
+                                You have not uploaded any files. Go to "Upload New File" to add one.
+                            </div>
+                            <div v-else class="row g-4">
+                                <div v-for="file in uploadedDocs" :key="file.id" class="col-lg-4 col-md-6">
+                                    <div class="card file-card h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="bi bi-file-earmark-text card-icon me-3"></i>
+                                                <div>
+                                                    <h5 class="card-title mb-0" :title="file.name">{{ file.name }}</h5>
+                                                    <small class="text-muted">{{ file.fileName }}</small>
+                                                </div>
+                                            </div>
+                                            <p classa="card-text">
+                                                <strong>Type:</strong> {{ file.fileType }} <br>
+                                                <strong>Size:</strong> {{ (file.size / 1024).toFixed(1) }} KB <br>
+                                                <strong>Uploaded:</strong> {{ new Date(file.uploadDate).toLocaleDateString() }}
+                                            </p>
+                                            <div class="card-tags">
+                                                <span v-for="tag in file.tags" class="badge bg-secondary me-1">{{ tag }}</span>
+                                                <span v-if="file.tags.length === 0" class="text-muted small">No tags</span>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer d-flex justify-content-between">
+                                            <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye-fill"></i> View/Decrypt</button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="deleteFile(file.id)"><i class="bi bi-trash-fill"></i> Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="activePage === 'upload_new'">
+                            <h1 class="display-5 mb-4">Upload a New File</h1>
+                            <div class="card shadow-sm">
+                                <div class="card-body p-4">
+                                    <form @submit.prevent="handleUpload">
+                                        <div class="mb-3"><label for="docName" class="form-label fs-5">Document Name</label><input type="text" v-model="uploadForm.name" class="form-control form-control-lg" id="docName" placeholder="e.g., My Passport" required></div>
+                                        <div class="mb-3"><label for="docTags" class="form-label fs-5">Tags (comma separated)</label><input type="text" v-model="uploadForm.tags" class="form-control form-control-lg" id="docTags" placeholder="e.g., travel, id, passport"></div>
+                                        <div class="mb-3">
+                                            <label class="form-label fs-5">File</label>
+                                            <div class="upload-drop-zone" :class="{ 'is-active': isDragging }" @click="$refs.fileInput.click()" @dragover.prevent="isDragging = true" @dragleave.prevent="isDragging = false" @drop.prevent="handleFileDrop">
+                                                <input type="file" ref="fileInput" @change="handleFileChange">
+                                                <div v-if="!uploadForm.file"><i class="bi bi-cloud-arrow-up-fill"></i><p class="mt-3 mb-0">Drag & Drop file</p><p class="small text-muted">or click to browse</p></div>
+                                                <div v-else><i class="bi bi-file-earmark-check-fill text-success"></i><p class="mt-3 mb-0 fs-5">Selected:</p><p class="small fw-bold">{{ uploadForm.file.name }}</p><span class="badge bg-secondary">{{ (uploadForm.file.size / 1024).toFixed(1) }} KB</span></div>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" :disabled="!uploadForm.file || !uploadForm.name"><i class="bi bi-shield-lock-fill"></i> Encrypt & Upload</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="activePage === 'issuer_portal'">
+                            <h1 class="display-5 mb-4">Issuer Portal</h1>
+                            <p class="lead mb-4">Simulate an authority (like MVJ College) issuing a Verifiable Credential.</p>
+                            <div class="card shadow-sm">
+                                <div class="card-body p-4">
+                                    <form @submit.prevent="handleIssueVC">
+                                        <div class="mb-3"><label class="form-label fs-5">Issuing Authority</label><input type="text" class="form-control form-control-lg" :value="issuer.name" disabled><small class="text-muted">Issuer DID: {{ issuer.did }}</small></div>
+                                        <div class="mb-3"><label for="subjectDID" class="form-label fs-5">Subject (User's) DID</label><input type="text" class="form-control form-control-lg" :value="user.did" disabled></div>
+                                        <div class="mb-3"><label for="vcType" class="form-label fs-5">Credential Type</label><input type="text" class="form-control form-control-lg" v-model="issueForm.type" id="vcType" required></div>
+                                        <div class="mb-3"><label for="vcData" class="form-label fs-5">Credential Data (JSON)</label><textarea class="form-control" v-model="issueForm.data" id="vcData" rows="5" required></textarea></div>
+                                        <button type="submit" class="btn btn-success btn-lg w-100 mt-3"><i class="bi bi-patch-check-fill"></i> Issue Verifiable Credential</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div v-if="activePage === 'verifier_portal'">
+                            <h1 class="display-5 mb-4">Verifier Portal</h1>
+                            <p class="lead mb-4">Simulate an employer verifying a credential. Paste a VC below to check its authenticity.</p>
+                            <div class="card shadow-sm">
+                                <div class="card-body p-4">
+                                    <form @submit.prevent="handleVerifyVC">
+                                        <div class="mb-3"><label for="vcToVerify" class="form-label fs-5">Verifiable Credential (JSON)</label><textarea class="form-control" v-model="verifyForm.data" id="vcToVerify" rows="10" placeholder="Paste the VC (JSON) here..."></textarea></div>
+                                        <button type="submit" class="btn btn-primary btn-lg w-100 mt-3"><i class="bi bi-search"></i> Verify Credential</button>
+                                    </form>
+                                    <div v-if="verifyForm.result" class="mt-4">
+                                        <div :class="['alert', verifyForm.result.isValid ? 'alert-success' : 'alert-danger']" role="alert">
+                                            <h4 class="alert-heading"><i :class="['bi', verifyForm.result.isValid ? 'bi-check-circle-fill' : 'bi-x-octagon-fill']"></i> Verification {{ verifyForm.result.isValid ? 'Successful' : 'Failed' }}</h4>
+                                            <p>{{ verifyForm.result.message }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </transition>
+            </main>
+        
+        </div> </div> <script>
+    
+        // --- MOCK BACKEND SERVICE ---
+        class DecentralizedIdentityService {
+            constructor() {
+                this.didRegistry = {}; 
+                this.vcLedger = {};
+                this.ipfsStore = {};
+                console.log("Mock Backend Service Initialized.");
+            }
+            createDID(name) {
+                const id = 'did:example:' + Date.now() + Math.random().toString(16).substring(2);
+                const publicKey = 'pubKey-' + id;
+                const didDocument = {
+                    '@context': 'https://www.w3.org/ns/did/v1',
+                    'id': id,
+                    'verificationMethod': [{'id': `${id}#keys-1`, 'type': 'EcdsaSecp256k1VerificationKey2019', 'controller': id, 'publicKeyHex': publicKey}]
+                };
+                this.didRegistry[id] = didDocument;
+                console.log(`DID created for ${name}: ${id}`);
+                return { did: id, publicKey: publicKey, name: name };
+            }
+            issueVC(issuer, subjectDID, credentialData, type) {
+                console.log(`Issuing VC of type '${type}' to ${subjectDID}`);
+                const dataHash = 'ipfs-hash-' + Math.random().toString(16).substring(2);
+                this.ipfsStore[dataHash] = credentialData;
+                const vc = {
+                    'id': 'vc-id-' + Date.now(),
+                    '@context': ['https://www.w3.org/2018/credentials/v1'],
+                    'type': ['VerifiableCredential', type],
+                    'issuer': { 'id': issuer.did, 'name': issuer.name },
+                    'issuanceDate': new Date().toISOString(),
+                    'credentialSubject': { 'id': subjectDID, 'data': credentialData },
+                    'proof': { 'type': 'EcdsaSecp256k1Signature2019', 'created': new Date().toISOString(), 'verificationMethod': `${issuer.did}#keys-1`, 'jws': 'simulated-signature-' + Math.random().toString(16).substring(2) }
+                };
+                this.vcLedger[vc.id] = vc.proof.jws;
+                return vc;
+            }
+            verifyVC(vc) {
+                try {
+                    if (!vc.id || !vc.proof || !vc.issuer.id) return { isValid: false, message: "Verification FAILED: Credential is missing required fields." };
+                    const signatureOnLedger = this.vcLedger[vc.id];
+                    if (!signatureOnLedger) return { isValid: false, message: "Verification FAILED: Credential ID not found on the blockchain ledger." };
+                    if (signatureOnLedger !== vc.proof.jws) return { isValid: false, message: "Verification FAILED: Credential signature does not match the blockchain record." };
+                    if (!this.didRegistry[vc.issuer.id]) return { isValid: false, message: "Verification FAILED: Issuer's DID is not registered." };
+                    return { isValid: true, message: `Successfully verified. Credential was issued by ${vc.issuer.name} on ${new Date(vc.issuanceDate).toLocaleDateString()}.` };
+                } catch (e) {
+                    return { isValid: false, message: `Verification FAILED: The provided data is not a valid JSON VC. (${e.message})` };
+                }
+            }
+        }
+    
+        // --- VUE APP ---
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                const defaultUploadForm = { name: '', tags: '', file: null };
+                
+                return {
+                    // --- NEW: Top-level App State ---
+                    showLandingPage: true, // Start on the landing page
+                    
+                    backend: new DecentralizedIdentityService(),
+                    activePage: 'dashboard', // Default page *inside* the vault
+                    isDragging: false,
+                    user: { did: '', name: '' },
+                    issuedDocs: [], 
+                    uploadedDocs: [], 
+                    uploadForm: { ...defaultUploadForm }, 
+                    defaultUploadForm: { ...defaultUploadForm },
+                    issueForm: {
+                        type: 'B.Tech. Degree',
+                        data: JSON.stringify({ "name": "Alex Johnson", "grade": "8.5 CGPA" }, null, 2)
+                    },
+                    verifyForm: { data: '', result: null },
+                    issuer: { did: '', name: '' }
+                }
+            },
+            
+            created() {
+                // Create DIDs for the User and the Issuer right away
+                this.user = this.backend.createDID("Alex Johnson (User)");
+                this.issuer = this.backend.createDID("MVJ College of Engineering");
+            },
+            
+            methods: {
+                // --- NEW: App Sign In / Sign Out ---
+                signIn() {
+                    console.log("Signing in... showing vault.");
+                    this.showLandingPage = false;
+                    this.activePage = 'dashboard'; // Go to dashboard on sign-in
+                },
+                signOut() {
+                    console.log("Signing out... returning to landing page.");
+                    if (confirm("Are you sure you want to sign out?")) {
+                        this.showLandingPage = true;
+                        // We can also clear session data here if needed
+                        this.verifyForm.result = null;
+                        this.verifyForm.data = '';
+                    }
+                },
+                
+                // --- File Upload Methods ---
+                handleFileChange(event) { this.uploadForm.file = event.target.files[0]; this.isDragging = false; },
+                handleFileDrop(event) { this.uploadForm.file = event.dataTransfer.files[0]; this.isDragging = false; },
+                
+                handleUpload() {
+                    const file = this.uploadForm.file;
+                    const docName = this.uploadForm.name;
+                    const tags = this.uploadForm.tags.split(',').map(tag => tag.trim()).filter(tag => tag); 
+                    const newFileRecord = {
+                        id: 'file-' + Date.now(),
+                        name: docName, fileName: file.name, fileType: file.type,
+                        size: file.size, tags: tags, uploadDate: new Date().toISOString()
+                    };
+                    this.uploadedDocs.push(newFileRecord);
+                    alert(`Success! "${docName}" has been uploaded.`);
+                    this.uploadForm = { ...this.defaultUploadForm };
+                    this.activePage = 'uploaded'; 
+                },
+                
+                deleteFile(fileId) {
+                    const fileName = this.uploadedDocs.find(doc => doc.id === fileId)?.name;
+                    if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                        this.uploadedDocs = this.uploadedDocs.filter(doc => doc.id !== fileId);
+                    }
+                },
+                
+                // --- Verifiable Credential (VC) Methods ---
+                handleIssueVC() {
+                    try {
+                        const credentialData = JSON.parse(this.issueForm.data);
+                        const newVC = this.backend.issueVC(this.issuer, this.user.did, credentialData, this.issueForm.type);
+                        this.issuedDocs.push(newVC);
+                        alert(`Success! The "${newVC.type[1]}" has been issued to the user.`);
+                        this.activePage = 'issued';
+                    } catch (e) {
+                        alert(`Error: The Credential Data is not valid JSON. ${e.message}`);
+                    }
+                },
+                
+                deleteVC(vcId) {
+                    const vc = this.issuedDocs.find(doc => doc.id === vcId);
+                    if (confirm(`Are you sure you want to delete your "${vc.type[1]}"?`)) {
+                        this.issuedDocs = this.issuedDocs.filter(doc => doc.id !== vcId);
+                    }
+                },
+                
+                shareForVerification(vc) {
+                    this.verifyForm.data = JSON.stringify(vc, null, 2);
+                    this.verifyForm.result = null;
+                    this.activePage = 'verifier_portal';
+                    alert('Verifiable Credential has been copied to the Verifier Portal for testing.');
+                },
+                
+                handleVerifyVC() {
+                    try {
+                        const vc = JSON.parse(this.verifyForm.data);
+                        this.verifyForm.result = this.backend.verifyVC(vc);
+                    } catch (e) {
+                        this.verifyForm.result = { isValid: false, message: `Verification FAILED: The provided data is not valid JSON. ${e.message}` };
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+</body>
+</html>
