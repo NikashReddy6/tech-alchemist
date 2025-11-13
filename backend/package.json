@@ -1,0 +1,19 @@
+{  
+  "name": "tech-alchemist-backend",  
+  "version": "0.1.0",  
+  "private": true,  
+  "main": "src/server.js",  
+  "scripts": {  
+    "start": "node src/server.js",  
+    "dev": "nodemon src/server.js"  
+  },  
+  "dependencies": {  
+    "express": "^4.18.2",  
+    "jose": "^4.16.0",  
+    "uuid": "^9.0.0",  
+    "dotenv": "^16.3.1"  
+  },  
+  "devDependencies": {  
+    "nodemon": "^2.0.22"  
+  }  
+}
