@@ -465,7 +465,7 @@
                 console.log("Mock Backend Service Initialized.");
             }
             createDID(name) {
-                const id = 'did:example:' + Date.now() + Math.random().toString(16).substring(2);
+                const id = 'Subject:' +'Maths(CD31) '+'DDCO(CD33) '+'python(CD362) '+'OS(CD032) '+'DSA(CD034)'
                 const publicKey = 'pubKey-' + id;
                 const didDocument = {
                     '@context': 'https://www.w3.org/ns/did/v1',
@@ -478,7 +478,7 @@
             }
             issueVC(issuer, subjectDID, credentialData, type) {
                 console.log(`Issuing VC of type '${type}' to ${subjectDID}`);
-                const dataHash = 'ipfs-hash-' + Math.random().toString(16).substring(2);
+                const dataHash = 'ipfs-hash-'+ Math.random().toString(16).substring(2);
                 this.ipfsStore[dataHash] = credentialData;
                 const vc = {
                     'id': 'vc-id-' + Date.now(),
@@ -527,16 +527,16 @@
                     defaultUploadForm: { ...defaultUploadForm },
                     issueForm: {
                         type: 'B.Tech. Degree',
-                        data: JSON.stringify({ "name": "Alex Johnson", "grade": "8.5 CGPA" }, null, 2)
+                        data: JSON.stringify({ "name": "Suraj Kumar", "grade": "9.2 CGPA" }, null, 2)
                     },
                     verifyForm: { data: '', result: null },
                     issuer: { did: '', name: '' }
                 }
             },
-            
+             
             created() {
                 // Create DIDs for the User and the Issuer right away
-                this.user = this.backend.createDID("Alex Johnson (User)");
+                this.user = this.backend.createDID("Suraj Kumar(User)");
                 this.issuer = this.backend.createDID("MVJ College of Engineering");
             },
             
