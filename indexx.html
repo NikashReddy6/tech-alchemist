@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decentralized Vault</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+
+        #app {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Dark, Professional Sidebar */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background-color: #212529; /* Dark background */
+            color: #fff;
+        }
+        
+        .sidebar .nav-link {
+            font-size: 1.1em;
+            color: #adb5bd;
+            transition: all 0.2s ease;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+            transform: scale(1.02);
+        }
+        
+        .sidebar .nav-link .bi {
+            margin-right: 12px;
+            font-size: 1.2em;
+            vertical-align: middle;
+        }
+        
+        .sidebar-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+            border-bottom: 1px solid #495057;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 40px;
+        }
+        
+        /* Page transition animation */
+        .page-enter-active {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .page-enter-from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .page-enter-to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* --- THIS IS NEW: Card for Uploaded Files --- */
+        .file-card {
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        
+        .file-card .card-body {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-card .card-title {
+            font-weight: 600;
+        }
+        
+        .file-card .card-icon {
+            font-size: 3.5rem;
+            line-height: 1;
+            color: #0d6efd;
+        }
+        
+        .file-card .card-tags {
+            margin-top: auto; /* Pushes tags to the bottom */
+            padding-top: 1rem;
+        }
+
+        /* --- Professional Drag-and-Drop Upload --- */
+        .upload-drop-zone {
+            border: 2px dashed #adb5bd;
+            border-radius: .375rem;
+            padding: 4rem;
+            text-align: center;
+            color: #6c757d;
+            background-color: #f8f9fa;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .upload-drop-zone.is-active {
+            background-color: #e9ecef;
+            border-color: #0d6efd;
+            color: #0d6efd;
+        }
+        
+        .upload-drop-zone .bi {
+            font-size: 3rem;
+            line-height: 1;
+        }
+        
+        .upload-drop-zone input[type="file"] {
+            display: none;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="app">
+    
+        <div class="sidebar d-flex flex-column p-3">
+            <div class="sidebar-header pb-3 mb-3">
+                <i class="bi bi-shield-lock"></i>
+                <span>DID-Vault</span>
+            </div>
+
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a href="#" class="nav-link" 
+                       :class="{ active: activePage === 'dashboard' }" 
+                       @click.prevent="activePage = 'dashboard'">
+                       <i class="bi bi-grid-fill"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" 
+                       :class="{ active: activePage === 'issued' }" 
+                       @click.prevent="activePage = 'issued'">
+                       <i class="bi bi-patch-check-fill"></i> Issued Documents
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" 
+                       :class="{ active: activePage === 'uploaded' }" 
+                       @click.prevent="activePage = 'uploaded'">
+                       <i class="bi bi-cloud-upload-fill"></i> My Uploaded Files
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#" class="nav-link" 
+                       :class="{ active: activePage === 'upload_new' }" 
+                       @click.prevent="activePage = 'upload_new'">
+                       <i class="bi bi-plus-circle-fill"></i> Upload New File
+                    </a>
+                </li>
+            </ul>
+            <hr class="text-secondary">
+            <div class="text-secondary small">
+                Status: <span class="text-success-emphasis">Connected</span>
+            </div>
+        </div>
+        
+        <main class="main-content">
+            <transition name="page" mode="out-in">
+                <div :key="activePage">
+                
+                    <div v-if="activePage === 'dashboard'">
+                        <h1 class="display-5 mb-4">Dashboard</h1>
+                        <p class="lead">Welcome to your secure Decentralized Vault.</p>
+                        </div>
+
+                    <div v-if="activePage === 'issued'">
+                        <h1 class="display-5 mb-4">Issued Documents</h1>
+                        <p class="lead mb-4">These are official documents issued to your DID by authorities (e.g., University, Govt).</p>
+                        
+                        <div v-if="issuedDocs.length === 0" class="alert alert-info">
+                            You have no issued documents yet.
+                        </div>
+                    </div>
+                    
+                    <div v-if="activePage === 'uploaded'">
+                        <h1 class="display-5 mb-4">My Uploaded Files</h1>
+                        <p class="lead mb-4">These are your personal files, encrypted and stored in your vault.</p>
+                        
+                        <div v-if="uploadedDocs.length === 0" class.="alert alert-info">
+                            You have not uploaded any files. Go to "Upload New File" to add one.
+                        </div>
+                        
+                        <div v-else class="row g-4">
+                            <div v-for="file in uploadedDocs" :key="file.id" class="col-lg-4 col-md-6">
+                                <div class="card file-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-file-earmark-text card-icon me-3"></i>
+                                            <div>
+                                                <h5 class="card-title mb-0" :title="file.name">{{ file.name }}</h5>
+                                                <small class="text-muted">{{ file.fileName }}</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <p classa="card-text">
+                                            <strong>Type:</strong> {{ file.fileType }} <br>
+                                            <strong>Size:</strong> {{ (file.size / 1024).toFixed(1) }} KB <br>
+                                            <strong>Uploaded:</strong> {{ new Date(file.uploadDate).toLocaleDateString() }}
+                                        </p>
+                                        
+                                        <div class="card-tags">
+                                            <span v-for="tag in file.tags" class="badge bg-secondary me-1">
+                                                {{ tag }}
+                                            </span>
+                                            <span v-if="file.tags.length === 0" class="text-muted small">
+                                                No tags
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer d-flex justify-content-between">
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye-fill"></i> View/Decrypt
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @click="deleteFile(file.id)">
+                                            <i class="bi bi-trash-fill"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-if="activePage === 'upload_new'">
+                        <h1 class="display-5 mb-4">Upload a New File</h1>
+                        <p class="lead mb-4">Upload a personal file (e.g., PDF, JPG) to your secure vault.</p>
+                        
+                        <div class="card shadow-sm">
+                            <div class="card-body p-4">
+                                <form @submit.prevent="handleUpload">
+                                    <div class="mb-3">
+                                        <label for="docName" class="form-label fs-5">Document Name</label>
+                                        <input type="text" v-model="uploadForm.name" class="form-control form-control-lg" id="docName" placeholder="e.g., My Passport" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="docTags" class="form-label fs-5">Tags (comma separated)</label>
+                                        <input type="text" v-model="uploadForm.tags" class="form-control form-control-lg" id="docTags" placeholder="e.g., travel, id, passport">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fs-5">File</label>
+                                        <div 
+                                            class="upload-drop-zone"
+                                            :class="{ 'is-active': isDragging }"
+                                            @click="$refs.fileInput.click()"
+                                            @dragover.prevent="isDragging = true"
+                                            @dragleave.prevent="isDragging = false"
+                                            @drop.prevent="handleFileDrop"
+                                        >
+                                            <input type="file" ref="fileInput" @change="handleFileChange">
+                                            <div v-if="!uploadForm.file">
+                                                <i class="bi bi-cloud-arrow-up-fill"></i>
+                                                <p class="mt-3 mb-0">Drag & Drop your file here</p>
+                                                <p class="small text-muted">or click to browse</p>
+                                            </div>
+                                            <div v-else>
+                                                <i class="bi bi-file-earmark-check-fill text-success"></i>
+                                                <p class="mt-3 mb-0 fs-5">File Selected:</p>
+                                                <p class="small fw-bold">{{ uploadForm.file.name }}</p>
+                                                <span class="badge bg-secondary">{{ (uploadForm.file.size / 1024).toFixed(1) }} KB</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" :disabled="!uploadForm.file || !uploadForm.name">
+                                        <i class="bi bi-shield-lock-fill"></i>
+                                        Encrypt & Upload
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </transition>
+        </main>
+    
+    </div>
+
+    <script>
+        const { createApp } = Vue
+
+        createApp({
+            data() {
+                const defaultUploadForm = {
+                    name: '',
+                    tags: '',
+                    file: null
+                };
+                
+                return {
+                    activePage: 'dashboard',
+                    issuedDocs: [], 
+                    uploadedDocs: [], 
+                    isDragging: false, 
+                    uploadForm: { ...defaultUploadForm }, 
+                    defaultUploadForm: { ...defaultUploadForm } 
+                }
+            },
+            methods: {
+                handleFileChange(event) {
+                    this.uploadForm.file = event.target.files[0];
+                    this.isDragging = false;
+                },
+                
+                handleFileDrop(event) {
+                    this.uploadForm.file = event.dataTransfer.files[0];
+                    this.isDragging = false;
+                },
+                
+                handleUpload() {
+                    console.log("--- Mock Backend: Uploading File ---");
+                    
+                    const file = this.uploadForm.file;
+                    const docName = this.uploadForm.name;
+                    const tags = this.uploadForm.tags.split(',')
+                                    .map(tag => tag.trim()) 
+                                    .filter(tag => tag); 
+                    
+                    const newFileRecord = {
+                        id: 'file-' + Date.now(),
+                        name: docName,
+                        fileName: file.name,
+                        fileType: file.type,
+                        size: file.size,
+                        tags: tags,
+                        uploadDate: new Date().toISOString()
+                    };
+                    
+                    console.log("Storing new record in 'DBMS':", newFileRecord);
+                    
+                    // "Save" the record to our mock database
+                    this.uploadedDocs.push(newFileRecord);
+                    
+                    alert(`Success! "${docName}" has been uploaded to your vault.`);
+                    
+                    this.uploadForm = { ...this.defaultUploadForm };
+                    // Go to the page to SEE the new file
+                    this.activePage = 'uploaded'; 
+                },
+                
+                // --- THIS IS THE NEW, WORKING DELETE FUNCTION ---
+                deleteFile(fileId) {
+                    // Find the name for the confirmation
+                    const fileName = this.uploadedDocs.find(doc => doc.id === fileId)?.name;
+                    
+                    if (confirm(`Are you sure you want to delete "${fileName}"?\nThis cannot be undone.`)) {
+                        console.log("Deleting file with ID:", fileId);
+                        
+                        // This re-builds the array, filtering out the deleted file
+                        this.uploadedDocs = this.uploadedDocs.filter(doc => doc.id !== fileId);
+                    }
+                }
+            }
+        }).mount('#app')
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+</body>
+</html>
